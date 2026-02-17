@@ -22,39 +22,53 @@ def greet(name):
 
 @app.route("/calculate")
 def calculate():
-    num1 = request.args.get("num1", type=int)
-    num2 = request.args.get("num2", type=int)
+    num1 = float(request.args.get("num1", 0))
+    num2 = float(request.args.get("num2", 0))
     operation = request.args.get("operation")
-    ans = 0
-    if operation == "add":
-        ans = num1 + num2
-    elif operation == "subtract":
-        ans = num1 - num2
-    elif operation == "multiply":
-        ans = num1 * num2
-    elif operation == "divide":
-        ans = num1 / num2
-    var = {"result": ans, "operation": operation}
-    return jsonify(
-        {"result": ans,
-         "operation": operation}
-    )
+    try:
+        if operation == "add":
+            result = num1 + num2
+        elif operation == "subtract":
+            result = num1 - num2
+        elif operation == "multiply":
+            result = num1 * num2
+        elif operation == "divide":
+            result = num1 / num2
+        else:
+            return jsonify({"error": "Invalid operation"}), 400
+        return jsonify({"result": result, "operation": operation})
+    except Exception as e:
+        # Log the exception and return an error response
+        print(f"Error occurred: {e}")
+        return jsonify({"error": "An error occurred during calculation"}), 500
 @app.route("/echo", methods=["POST"])
 def echo():
     data = request.get_json()
     data["echoed"] = True
     return jsonify(data)
-"""
-Route 6: Status Code Practice
-URL: /status/<int:code>
-Method: GET
-Response: Return a message with the specified HTTP status code
-Example: /status/404 returns "This is a 404 error" with status code 404
-Hint: Return a tuple: (message, status_code)
-"""
+
 @app.route("/status/<int:code>")
 def status(code):
     return f"This is a {code} error", code
+
+
+@app.before_request
+def log_request():
+    current_app.logger.info(f"{request.method} {request.path}")
+
+
+@app.after_request
+def add_header(response):
+    response.headers["X-Custom-Header"] = "FlaskRocks"
+    return response
+
+@app.teardown_request
+def teardown_request(exception=None):
+    if exception:
+        current_app.logger.error(f"Request ended with exception: {exception}")
+    else:
+        current_app.logger.info("Request completed successfully")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
