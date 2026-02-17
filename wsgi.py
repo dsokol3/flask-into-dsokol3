@@ -52,6 +52,18 @@ def status(code):
     return f"This is a {code} error", code
 
 
+@app.route('/debug/routes')
+def show_routes():
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            'endpoint': rule.endpoint,
+            'methods': list(rule.methods),
+            'path': str(rule)
+        })
+    return jsonify(routes)
+
+
 @app.before_request
 def log_request():
     current_app.logger.info(f"{request.method} {request.path}")
